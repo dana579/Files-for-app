@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Дихальні практики</title>
+<style>
+  :root{
+    --bg:#1B1035; --surface:#251747; --border:#3A2A66; --text:#F2EDFF;
+    --gold:#FFD84D; --gold-deep:#E0A61B; --lavender:#A78BFA; --muted:#9D8FC7; --danger:#F1876B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(ellipse at 50% -10%, #2B1A55 0%, var(--bg) 55%); color:var(--text);
+    padding-bottom:40px;
+  }
+  .serif{font-family:Georgia,'Times New Roman',serif;}
+  .wrap{max-width:440px; margin:0 auto; padding:0 24px;}
+  .topbar{display:flex; justify-content:flex-end; gap:6px; padding:20px 24px 0;}
+  .langbtn{font-size:12px; padding:5px 12px; border-radius:999px; border:1px solid var(--border); color:var(--muted); background:none;}
+  .langbtn.active{border-color:var(--gold); color:var(--gold);}
+  h1{font-size:24px; margin:0 0 8px;}
+  h2{font-size:20px; margin:0 0 16px;}
+  h3{font-size:14px; margin:0 0 8px; color:var(--gold);}
+  p{line-height:1.5;}
+  .muted{color:var(--muted);}
+  .small{font-size:13px;}
+  .xsmall{font-size:12px;}
+  .card{border:1px solid var(--border); background:var(--surface); border-radius:16px; padding:18px; margin-bottom:16px;}
+  .btn-gold{
+    width:100%; padding:15px; border-radius:12px; border:none; font-weight:600; font-size:15px;
+    background:linear-gradient(180deg,#FFE47A 0%,var(--gold) 45%,var(--gold-deep) 100%); color:#2B1A05;
+    box-shadow:0 6px 18px rgba(255,216,77,.25), inset 0 1px 0 rgba(255,255,255,.55);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-gold:disabled{background:var(--border); color:var(--muted); box-shadow:none;}
+  .btn-outline{
+    width:100%; padding:13px; border-radius:12px; border:1px solid var(--border); background:none; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px;
+  }
+  .btn-outline.active-text{color:var(--text);}
+  .row{display:flex; gap:8px;}
+  .row > *{flex:1;}
+  .q-block{margin-bottom:24px;}
+  .q-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .opt{padding:8px 4px; border-radius:10px; border:1px solid var(--border); color:var(--muted); background:none; font-size:12px;}
+  .opt.sel{background:var(--gold); color:#2B1A05; border-color:var(--gold); font-weight:600;}
+  .tech-card{width:100%; text-align:left; border-radius:14px; border:1px solid var(--border); background:var(--surface); padding:14px; margin-bottom:10px; display:block;}
+  .tech-card.active{border-color:var(--gold); background:rgba(255,216,77,.08);}
+  .tech-top{display:flex; justify-content:space-between; align-items:baseline;}
+  .cyc-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px;}
+  .cyc-opt{padding:9px; border-radius:10px; border:1px solid var(--border); color:var(--muted); background:none; font-size:14px;}
+  .cyc-opt.sel{background:var(--gold); color:#2B1A05; border-color:var(--gold); font-weight:600;}
+  .link-btn{background:none; border:none; color:var(--muted); font-size:13px; width:100%; text-align:center; padding:10px 0;}
+  .underline-link{text-decoration:underline; text-underline-offset:3px;}
+  .star{filter:drop-shadow(0 4px 6px rgba(0,0,0,.45)) drop-shadow(0 0 10px rgba(255,216,77,.35));}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-10px) rotate(6deg);}}
+  .floaty{animation:floaty 6s ease-in-out infinite;}
+  .starfield{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0;}
+  .starfield .s{position:absolute;}
+  .content{position:relative; z-index:1;}
+  .stress-row{display:flex; gap:10px; justify-content:center; margin-bottom:8px;}
+  .stress-dot{width:46px; height:46px; border-radius:50%; border:1px solid var(--border); color:var(--muted); background:none; font-size:15px;}
+  .stress-dot.sel{background:var(--lavender); border-color:var(--lavender); color:#1B1035; font-weight:600;}
+  .breath-circle{
+    width:220px; height:220px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    margin:0 auto; transition:transform 1s ease-in-out, background-color .6s ease;
+  }
+  .modal-bg{position:fixed; inset:0; background:rgba(10,5,25,.7); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  .modal-sheet{width:100%; max-width:440px; max-height:80vh; overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:20px 20px 0 0; padding:22px;}
+  .hidden{display:none !important;}
+  .chart-wrap{margin:-4px 0 24px -6px;}
+  .hist-item{display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); background:var(--surface); border-radius:10px; padding:10px 14px; margin-bottom:8px; font-size:14px;}
+  .toprow{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .toprow-icons{display:flex; align-items:center; gap:12px;}
+  .icon-btn{background:none; border:none; color:var(--muted); padding:0; cursor:pointer;}
+  .backlink{display:block; margin:24px 0 8px; color:var(--muted); font-size:14px; background:none; border:none;}
+</style>
+</head>
+<body>
+
+<div class="starfield" id="starfield"></div>
+
+<div class="topbar" id="langBar"></div>
+<div class="content wrap" id="app"></div>
+
+<script>
+/* ---------- i18n ---------- */
+const STRINGS = {
+  uk: {
+    langName:"УКР",
+    beforeStart:"Перед початком",
+    onboardTitle:"Як минув цей тиждень?",
+    onboardDesc:"Чотири короткі запитання — щоб задати точку відліку. Це не діагностика, просто знімок вашого стану зараз, з яким потім можна порівнювати.",
+    questions:["Було важко розслабитися","Відчували внутрішнє напруження або тривогу","Роздратування виникало швидше, ніж зазвичай","Думки крутилися по колу, заважаючи зосередитися"],
+    answerOptions:["Ні","Іноді","Часто","Постійно"],
+    continue:"Продовжити", skip:"Пропустити",
+    appTitle:"Дихальні практики",
+    yourBaseline:"Ваш фон на", retake:"Пройти опитування знову",
+    chooseTechnique:"Оберіть техніку", cycles:"Кількість циклів",
+    soundOn:"Дзвін", soundOff:"Без дзвону", voiceOn:"Голос", voiceOff:"Без голосу",
+    startPractice:"Почати практику", history:"Історія", back:"← Назад",
+    beforePractice:"Перед практикою", afterPractice:"Після практики",
+    stressQuestion:"Наскільки сильне напруження зараз?", calm:"спокійно", veryTense:"дуже напружено",
+    begin:"Почати", saveFinish:"Зберегти та завершити", cycle:"Цикл", pause:"Пауза", resume:"Продовжити", finish:"Завершити",
+    historyTitle:"Історія практик", historyEmpty:"Поки порожньо. Після першої практики тут з'явиться графік напруження до і після.",
+    avgDrop1:"У середньому напруження знижується на", avgDrop2:"пункти за практику",
+    before:"До", after:"Після", min:"хв",
+    scoreLow:"Фон спокійний", scoreMid:"Помірне напруження", scoreHigh:"Високе напруження",
+    aboutLink:"Про застосунок і конфіденційність", aboutTitle:"Про застосунок",
+    disclaimerTitle:"Важливо",
+    disclaimerText:"Цей застосунок призначений для загального благополуччя та самодопомоги. Він не є медичною консультацією, діагностикою чи лікуванням і не замінює звернення до лікаря або психолога. Якщо ви відчуваєте сильну тривогу, панічні атаки чи інші серйозні симптоми — зверніться до фахівця. Якщо під час дихальних вправ ви відчуваєте запаморочення або дискомфорт, зупиніться та дихайте у звичному ритмі.",
+    privacyTitle:"Конфіденційність",
+    privacyText:"Усі дані (відповіді опитування, історія практик, оцінки стану) зберігаються локально у вашому браузері. Автор застосунку не має до них доступу; дані не передаються третім особам і не використовуються для реклами чи аналітики. Видалити дані можна, очистивши дані сайту в налаштуваннях браузера. Застосунок не збирає персональні дані у розумінні GDPR та Закону України «Про захист персональних даних».",
+    close:"Закрити",
+    techniques:{
+      coherent:{name:"Рівне дихання",sub:"5 - 5",desc:"Простий ритм без затримок. Добре для щоденної практики."},
+      relax46:{name:"Дихання 4-6",sub:"4 - 6",desc:"Видих довший за вдих — м'яко заспокоює. Підходить для будь-якого моменту дня."},
+      triangle:{name:"Трикутне дихання",sub:"4 - 4 - 4",desc:"Вдих, затримка, видих — без паузи після видиху. М'якша альтернатива квадрату."},
+      box:{name:"Квадратне дихання",sub:"4 - 4 - 4 - 4",desc:"Перед стресовими ситуаціями — переговорами, дзвінками, виступами."},
+      478:{name:"4-7-8",sub:"4 - 7 - 8",desc:"Довгий видих активує парасимпатику. Добре перед сном."}
+    },
+    phases:{in:"Вдих", out:"Видих", hold:"Затримка"}
+  },
+  en: {
+    langName:"ENG",
+    beforeStart:"Before you start",
+    onboardTitle:"How was your week?",
+    onboardDesc:"Four short questions to set a baseline. This isn't a diagnosis — just a snapshot of how you feel now, so you can compare later.",
+    questions:["It was hard to relax","You felt inner tension or anxiety","You got irritated faster than usual","Thoughts kept circling, making it hard to focus"],
+    answerOptions:["No","Sometimes","Often","Constantly"],
+    continue:"Continue", skip:"Skip",
+    appTitle:"Breathing practices",
+    yourBaseline:"Your baseline on", retake:"Retake the questionnaire",
+    chooseTechnique:"Choose a technique", cycles:"Number of cycles",
+    soundOn:"Chime", soundOff:"No chime", voiceOn:"Voice", voiceOff:"No voice",
+    startPractice:"Start practice", history:"History", back:"← Back",
+    beforePractice:"Before practice", afterPractice:"After practice",
+    stressQuestion:"How tense do you feel right now?", calm:"calm", veryTense:"very tense",
+    begin:"Begin", saveFinish:"Save and finish", cycle:"Cycle", pause:"Pause", resume:"Resume", finish:"Finish",
+    historyTitle:"Practice history", historyEmpty:"Nothing here yet. After your first practice, a before/after tension chart will appear.",
+    avgDrop1:"On average, tension drops by", avgDrop2:"points per practice",
+    before:"Before", after:"After", min:"min",
+    scoreLow:"Calm baseline", scoreMid:"Moderate tension", scoreHigh:"High tension",
+    aboutLink:"About & privacy", aboutTitle:"About this app",
+    disclaimerTitle:"Important",
+    disclaimerText:"This app is intended for general wellbeing and self-help. It is not medical advice, diagnosis, or treatment, and does not replace consulting a doctor or mental health professional. If you experience severe anxiety, panic attacks, or other serious symptoms, please seek professional help. If you feel dizzy or uncomfortable during breathing exercises, stop and return to your normal breathing.",
+    privacyTitle:"Privacy",
+    privacyText:"All data (questionnaire answers, practice history, tension ratings) is stored locally in your browser. The app's author has no access to it; data is not shared with third parties and is not used for advertising or analytics. You can delete your data by clearing site data in your browser settings. The app does not collect personal data within the meaning of the GDPR or Ukraine's Law on Personal Data Protection.",
+    close:"Close",
+    techniques:{
+      coherent:{name:"Coherent breathing",sub:"5 - 5",desc:"A simple rhythm with no holds. Great for daily practice."},
+      relax46:{name:"4-6 breathing",sub:"4 - 6",desc:"Exhale longer than the inhale — gently calming. Works any time of day."},
+      triangle:{name:"Triangle breathing",sub:"4 - 4 - 4",desc:"Inhale, hold, exhale — no pause after the exhale. A softer alternative to box breathing."},
+      box:{name:"Box breathing",sub:"4 - 4 - 4 - 4",desc:"Used before stressful situations — negotiations, calls, speaking."},
+      478:{name:"4-7-8",sub:"4 - 7 - 8",desc:"The long exhale activates the parasympathetic system. Good before sleep."}
+    },
+    phases:{in:"Inhale", out:"Exhale", hold:"Hold"}
+  }
+};
+
+const TECHNIQUE_DEFS = {
+  coherent:{phases:[{key:"in",seconds:5},{key:"out",seconds:5}]},
+  relax46:{phases:[{key:"in",seconds:4},{key:"out",seconds:6}]},
+  triangle:{phases:[{key:"in",seconds:4},{key:"hold",seconds:4},{key:"out",seconds:4}]},
+  box:{phases:[{key:"in",seconds:4},{key:"hold",seconds:4},{key:"out",seconds:4},{key:"hold",seconds:4}]},
+  478:{phases:[{key:"in",seconds:4},{key:"hold",seconds:7},{key:"out",seconds:8}]}
+};
+const CYCLE_OPTIONS = [4,6,10];
+const LOCALES = {uk:"uk-UA", en:"en-GB"};
+
+/* ---------- audio: files live alongside this index.html ---------- */
+function playPhaseAudio(key, lang){
+  let file;
+  if (key === "hold" && lang === "en") file = "hold your breath_en.m4a";
+  else file = `${key}_${lang}.m4a`;
+  const a = new Audio(encodeURI(file));
+  a.play().catch(()=>{});
+}
+function playNumberAudio(n, lang){
+  const a = new Audio(`${n}_${lang}.m4a`);
+  a.play().catch(()=>{});
+}
+let audioCtx = null;
+function chime(phaseKey){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const freq = phaseKey==="in" ? 261.6 : phaseKey==="out" ? 196.0 : 233.1;
+    const dur = phaseKey==="in" ? 2.6 : phaseKey==="out" ? 3.0 : 2.2;
+    const peak = phaseKey==="hold" ? 0.25 : 0.35;
+    const master = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type="lowpass"; filter.frequency.setValueAtTime(freq*6, now); filter.Q.value=0.6;
+    master.connect(filter).connect(audioCtx.destination);
+    [[1,1,0],[1.003,.6,3],[2,.28,-2],[2.98,.14,4]].forEach(([ratio,gain,detune])=>{
+      const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
+      osc.type="sine"; osc.frequency.setValueAtTime(freq*ratio, now); osc.detune.setValueAtTime(detune, now);
+      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(peak*gain, now+0.2);
+      g.gain.exponentialRampToValueAtTime(0.0005, now+dur);
+      osc.connect(g).connect(master); osc.start(now); osc.stop(now+dur+0.1);
+    });
+  }catch(e){}
+}
+
+/* ---------- state ---------- */
+const state = {
+  lang: localStorage.getItem("breath-lang") || "uk",
+  profile: JSON.parse(localStorage.getItem("breath-profile") || "null"),
+  sessions: JSON.parse(localStorage.getItem("breath-sessions") || "[]"),
+  view: "onboarding",
+  sound: true,
+  voiceOn: true,
+  techniqueId: "coherent",
+  totalCycles: 6,
+};
+if (state.profile) state.view = "home";
+
+function t(){ return STRINGS[state.lang]; }
+function saveProfile(p){ state.profile = p; localStorage.setItem("breath-profile", JSON.stringify(p)); }
+function saveSession(entry){ state.sessions.push(entry); localStorage.setItem("breath-sessions", JSON.stringify(state.sessions)); }
+function setLang(l){ state.lang = l; localStorage.setItem("breath-lang", l); render(); }
+function fmtDate(iso){ return new Date(iso).toLocaleDateString(LOCALES[state.lang]||"uk-UA", {day:"2-digit", month:"2-digit"}); }
+function scoreLabel(score){
+  const T=t();
+  if(score<=3) return {text:T.scoreLow, tone:"var(--lavender)"};
+  if(score<=7) return {text:T.scoreMid, tone:"var(--gold)"};
+  return {text:T.scoreHigh, tone:"var(--danger)"};
+}
+function phaseColor(key){ return key==="in" ? "var(--gold)" : key==="out" ? "var(--lavender)" : "#CBB56E"; }
+
+/* ---------- star svg ---------- */
+function starSVG(size){
+  return `<svg class="star" width="${size}" height="${size}" viewBox="0 0 100 100">
+    <defs>
+      <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#FFF3B0"/><stop offset="45%" stop-color="#FFD84D"/><stop offset="100%" stop-color="#E0A61B"/>
+      </linearGradient>
+    </defs>
+    <polygon points="50,4 61,38 97,38 68,59 79,94 50,72 21,94 32,59 3,38 39,38" fill="url(#sg)" stroke="#B37E0E" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="50,4 61,38 50,45 39,38" fill="#FFF7CC" opacity="0.65"/>
+  </svg>`;
+}
+document.getElementById("starfield").innerHTML = [
+  [22,"8%","6%","0s"],[14,"16%","82%","1.2s"],[30,"70%","88%","2.4s"],[12,"82%","8%","0.6s"],[18,"45%","94%","1.8s"]
+].map(([size,top,left,delay])=>`<div class="s" style="top:${top};left:${left};animation:floaty 7s ease-in-out ${delay} infinite">${starSVG(size)}</div>`).join("");
+
+/* ---------- render langbar ---------- */
+function renderLangBar(){
+  document.getElementById("langBar").innerHTML = Object.keys(STRINGS).map(l=>
+    `<button class="langbtn ${state.lang===l?'active':''}" onclick="setLang('${l}')">${STRINGS[l].langName}</button>`
+  ).join("");
+}
+
+/* ---------- views ---------- */
+function renderOnboarding(){
+  const T=t();
+  return `
+  <div class="wrap" style="padding-top:20px;">
+    <div style="display:flex;align-items:center;gap:8px;color:var(--muted);margin-bottom:8px;">
+      ${starSVG(18)}<span class="xsmall" style="text-transform:uppercase;letter-spacing:.05em;">${T.beforeStart}</span>
+    </div>
+    <h1 class="serif">${T.onboardTitle}</h1>
+    <p class="muted small" style="margin-bottom:28px;">${T.onboardDesc}</p>
+    <div id="qBlock"></div>
+    <div style="margin-top:30px;">
+      <button class="btn-gold" id="continueBtn" disabled onclick="submitOnboarding()">${T.continue} →</button>
+      <button class="link-btn" onclick="skipOnboarding()">${T.skip}</button>
+    </div>
+    <div class="card" style="margin-top:36px;">
+      <h3>${T.disclaimerTitle}</h3>
+      <p class="xsmall muted" style="margin-bottom:18px;">${T.disclaimerText}</p>
+      <h3>${T.privacyTitle}</h3>
+      <p class="xsmall muted">${T.privacyText}</p>
+    </div>
+  </div>`;
+}
+let onboardAnswers = [null,null,null,null];
+function renderQuestions(){
+  const T=t();
+  document.getElementById("qBlock").innerHTML = T.questions.map((q,qi)=>`
+    <div class="q-block">
+      <p class="small" style="margin-bottom:10px;">${q}</p>
+      <div class="q-grid">
+        ${T.answerOptions.map((label,i)=>`<button class="opt ${onboardAnswers[qi]===i?'sel':''}" onclick="setAnswer(${qi},${i})">${label}</button>`).join("")}
+      </div>
+    </div>`).join("");
+}
+function setAnswer(qi,i){
+  onboardAnswers[qi]=i;
+  renderQuestions();
+  const allAnswered = onboardAnswers.every(a=>a!==null);
+  document.getElementById("continueBtn").disabled = !allAnswered;
+}
+function submitOnboarding(){
+  const score = onboardAnswers.reduce((a,b)=>a+b,0);
+  saveProfile({score, date:new Date().toISOString()});
+  onboardAnswers=[null,null,null,null];
+  state.view="home"; render();
+}
+function skipOnboarding(){
+  saveProfile({skipped:true, date:new Date().toISOString()});
+  onboardAnswers=[null,null,null,null];
+  state.view="home"; render();
+}
+
+function renderHome(){
+  const T=t();
+  const skipped = state.profile.skipped;
+  const lbl = skipped ? null : scoreLabel(state.profile.score);
+  const baselineBlock = skipped ? `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="xsmall muted">${T.onboardTitle}</span>
+      <button class="link-btn" style="width:auto;color:var(--gold);" onclick="retakeOnboarding()">${T.retake}</button>
+    </div>` : `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span class="xsmall muted">${T.yourBaseline} ${fmtDate(state.profile.date)}</span>
+        <span class="xsmall" style="color:${lbl.tone}">${lbl.text}</span>
+      </div>
+      <div style="height:6px;border-radius:999px;overflow:hidden;background:var(--border);">
+        <div style="height:100%;border-radius:999px;width:${(state.profile.score/12)*100}%;background:${lbl.tone};"></div>
+      </div>
+      <button class="link-btn" style="width:auto;padding:8px 0 0;" onclick="retakeOnboarding()">${T.retake}</button>
+    </div>`;
+
+  const techCards = Object.entries(TECHNIQUE_DEFS).map(([id,def])=>{
+    const active = state.techniqueId===id;
+    const tech = T.techniques[id];
+    return `<button class="tech-card ${active?'active':''}" onclick="selectTechnique('${id}')">
+      <div class="tech-top"><span style="font-weight:500;">${tech.name}</span><span class="xsmall" style="color:var(--gold);font-family:monospace;">${tech.sub}</span></div>
+      <p class="xsmall muted" style="margin:4px 0 0;">${tech.desc}</p>
+    </button>`;
+  }).join("");
+
+  const cycleBtns = CYCLE_OPTIONS.map(n=>`<button class="cyc-opt ${state.totalCycles===n?'sel':''}" onclick="selectCycles(${n})">${n}</button>`).join("");
+
+  return `
+  <div class="wrap" style="padding-top:20px;">
+    <div style="display:flex;align-items:center;gap:8px;color:var(--muted);margin-bottom:28px;">
+      <span class="floaty" style="display:inline-flex;">${starSVG(20)}</span><span class="xsmall" style="text-transform:uppercase;letter-spacing:.05em;">${T.appTitle}</span>
+    </div>
+    ${baselineBlock}
+    <h1 class="serif" style="margin-top:20px;">${T.chooseTechnique}</h1>
+    <div style="margin:16px 0 20px;">${techCards}</div>
+    <p class="xsmall muted" style="text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">${T.cycles}</p>
+    <div class="cyc-grid">${cycleBtns}</div>
+    <div class="row" style="margin-bottom:20px;">
+      <button class="btn-outline ${state.sound?'active-text':''}" onclick="toggleSound()">${state.sound?'🔔':'🔕'} ${state.sound?T.soundOn:T.soundOff}</button>
+      <button class="btn-outline ${state.voiceOn?'active-text':''}" onclick="toggleVoice()">${state.voiceOn?'🎙️':'🚫'} ${state.voiceOn?T.voiceOn:T.voiceOff}</button>
+    </div>
+    <button class="btn-gold" style="margin-bottom:10px;" onclick="startPractice()">${T.startPractice} →</button>
+    <button class="btn-outline" onclick="goHistory()">🕐 ${T.history} (${state.sessions.length})</button>
+    <button class="link-btn underline-link" style="margin-top:20px;" onclick="showAbout()">${T.aboutLink}</button>
+  </div>
+  <div id="aboutModal"></div>`;
+}
+function selectTechnique(id){ state.techniqueId=id; render(); }
+function selectCycles(n){ state.totalCycles=n; render(); }
+function toggleSound(){ state.sound=!state.sound; render(); }
+function toggleVoice(){ state.voiceOn=!state.voiceOn; render(); }
+function retakeOnboarding(){ state.view="onboarding"; render(); }
+function goHistory(){ state.view="history"; render(); }
+function startPractice(){ state.view="practice"; practiceStage="pre"; preStress=null; postStress=null; render(); }
+
+function showAbout(){
+  const T=t();
+  document.getElementById("aboutModal").innerHTML = `
+    <div class="modal-bg" onclick="closeAbout(event)">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <h2 class="serif">${T.aboutTitle}</h2>
+        <h3>${T.disclaimerTitle}</h3>
+        <p class="small muted" style="margin-bottom:20px;">${T.disclaimerText}</p>
+        <h3>${T.privacyTitle}</h3>
+        <p class="small muted" style="margin-bottom:24px;">${T.privacyText}</p>
+        <button class="btn-gold" onclick="closeAbout(event)">${T.close}</button>
+      </div>
+    </div>`;
+}
+function closeAbout(e){ if(e) e.stopPropagation(); document.getElementById("aboutModal").innerHTML=""; }
+
+/* ---------- practice ---------- */
+let practiceStage = "pre";
+let preStress=null, postStress=null;
+let phaseIdx=0, secondsLeft=0, cyclesDone=0, paused=false, startedAt=0, timerId=null;
+
+function renderPractice(){
+  const T=t();
+  if(practiceStage==="pre" || practiceStage==="post"){
+    const isPre = practiceStage==="pre";
+    const value = isPre ? preStress : postStress;
+    const dots = [1,2,3,4,5].map(n=>`<button class="stress-dot ${value===n?'sel':''}" onclick="setStress(${n},${isPre})">${n}</button>`).join("");
+    return `
+    <div class="wrap" style="padding-top:40px;text-align:center;">
+      <button class="backlink" style="text-align:left;" onclick="cancelPractice()">${T.back}</button>
+      <p class="muted small">${isPre?T.beforePractice:T.afterPractice}</p>
+      <h1 class="serif" style="margin:8px 0 30px;">${T.stressQuestion}</h1>
+      <div class="stress-row">${dots}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:28px;">
+        <span>${T.calm}</span><span>${T.veryTense}</span>
+      </div>
+      <button class="btn-gold" ${value===null?'disabled':''} onclick="${isPre?'beginPractice()':'finishPractice()'}">${isPre?T.begin:T.saveFinish}</button>
+    </div>`;
+  }
+  // running
+  const def = TECHNIQUE_DEFS[state.techniqueId];
+  const phase = def.phases[phaseIdx];
+  const color = phaseColor(phase.key);
+  const scale = phase.key==="in" ? 1.35 : phase.key==="out" ? 0.85 : 1.1;
+  return `
+  <div class="wrap" style="padding-top:20px;min-height:82vh;display:flex;flex-direction:column;">
+    <div class="toprow">
+      <span class="xsmall muted">${T.techniques[state.techniqueId].name}</span>
+      <div class="toprow-icons">
+        <button class="icon-btn" onclick="toggleVoiceRun()">${state.voiceOn?'🎙️':'🚫'}</button>
+        <button class="icon-btn" onclick="toggleSoundRun()">${state.sound?'🔔':'🔕'}</button>
+        <span class="xsmall muted">${T.cycle} ${Math.min(cyclesDone+1,state.totalCycles)} / ${state.totalCycles}</span>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+      <div class="breath-circle" style="transform:scale(${scale});transition-duration:${phase.seconds}s;background:radial-gradient(circle at 35% 30%, ${color}55, ${color}22 60%, transparent 75%);border:1.5px solid ${color}88;box-shadow:0 0 60px ${color}22;">
+        <div style="text-align:center;">
+          <p style="color:${color};margin:0 0 4px;font-size:18px;">${T.phases[phase.key]}</p>
+          <p style="font-family:monospace;font-size:38px;margin:0;">${secondsLeft}</p>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="padding-bottom:20px;">
+      <button class="btn-outline active-text" onclick="togglePause()">${paused?'▶':'⏸'} ${paused?T.resume:T.pause}</button>
+      <button class="btn-outline" onclick="endEarly()">⏹ ${T.finish}</button>
+    </div>
+  </div>`;
+}
+function setStress(n,isPre){ if(isPre) preStress=n; else postStress=n; render(); }
+function cancelPractice(){ state.view="home"; render(); }
+function toggleSoundRun(){ state.sound=!state.sound; render(); }
+function toggleVoiceRun(){ state.voiceOn=!state.voiceOn; render(); }
+
+function beginPractice(){
+  const def = TECHNIQUE_DEFS[state.techniqueId];
+  phaseIdx=0; secondsLeft=def.phases[0].seconds; cyclesDone=0; paused=false;
+  startedAt=Date.now();
+  if(state.sound) chime(def.phases[0].key);
+  if(state.voiceOn) playPhaseAudio(def.phases[0].key, state.lang);
+  practiceStage="running";
+  render();
+  clearInterval(timerId);
+  timerId=setInterval(tick,1000);
+}
+function tick(){
+  if(paused) return;
+  const def = TECHNIQUE_DEFS[state.techniqueId];
+  if(secondsLeft>1){
+    secondsLeft-=1;
+    if(state.voiceOn) playNumberAudio(secondsLeft, state.lang);
+  } else {
+    phaseIdx=(phaseIdx+1)%def.phases.length;
+    const nextPhase=def.phases[phaseIdx];
+    if(state.sound) chime(nextPhase.key);
+    if(state.voiceOn) playPhaseAudio(nextPhase.key, state.lang);
+    if(phaseIdx===0){
+      cyclesDone+=1;
+      if(cyclesDone>=state.totalCycles){
+        clearInterval(timerId);
+        practiceStage="post"; render(); return;
+      }
+    }
+    secondsLeft=nextPhase.seconds;
+  }
+  render();
+}
+function togglePause(){ paused=!paused; render(); }
+function endEarly(){ clearInterval(timerId); practiceStage="post"; render(); }
+function finishPractice(){
+  const durationMin = Math.max(1, Math.round((Date.now()-startedAt)/60000));
+  saveSession({date:new Date().toISOString(), techniqueId:state.techniqueId, durationMin, preStress, postStress});
+  state.view="home"; render();
+}
+
+/* ---------- history ---------- */
+function renderHistory(){
+  const T=t();
+  if(state.sessions.length===0){
+    return `<div class="wrap" style="padding-top:20px;">
+      <button class="backlink" onclick="backHome()">${T.back}</button>
+      <h1 class="serif">${T.historyTitle}</h1>
+      <p class="small muted">${T.historyEmpty}</p>
+    </div>`;
+  }
+  const avgDrop = (state.sessions.reduce((a,s)=>a+(s.preStress-s.postStress),0)/state.sessions.length).toFixed(1);
+  const chartSvg = buildChartSVG(state.sessions);
+  const items = [...state.sessions].reverse().map(s=>{
+    const name = T.techniques[s.techniqueId] ? T.techniques[s.techniqueId].name : "";
+    return `<div class="hist-item">
+      <div><div>${name}</div><div class="xsmall muted">${fmtDate(s.date)} · ${s.durationMin} ${T.min}</div></div>
+      <div class="xsmall muted">${s.preStress} → <span style="color:var(--lavender)">${s.postStress}</span></div>
+    </div>`;
+  }).join("");
+  return `<div class="wrap" style="padding-top:20px;">
+    <button class="backlink" onclick="backHome()">${T.back}</button>
+    <h1 class="serif">${T.historyTitle}</h1>
+    <div class="card" style="display:flex;align-items:center;gap:10px;">
+      <span>📉</span><span class="small">${T.avgDrop1} <strong style="color:var(--gold)">${avgDrop}</strong> ${T.avgDrop2}</span>
+    </div>
+    <div class="chart-wrap">${chartSvg}</div>
+    <div>${items}</div>
+  </div>`;
+}
+function backHome(){ state.view="home"; render(); }
+function buildChartSVG(sessions){
+  const w=392, h=180, pad=28;
+  const n=sessions.length;
+  const xStep = n>1 ? (w-pad*2)/(n-1) : 0;
+  const yFor = v => h-pad - (v/5)*(h-pad*2);
+  const preLine = sessions.map((s,i)=>`${pad+i*xStep},${yFor(s.preStress)}`).join(" ");
+  const postLine = sessions.map((s,i)=>`${pad+i*xStep},${yFor(s.postStress)}`).join(" ");
+  const dots = (arr,color)=>sessions.map((s,i)=>`<circle cx="${pad+i*xStep}" cy="${yFor(arr[i])}" r="3" fill="${color}"/>`).join("");
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="overflow:visible;">
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--border)" />
+    <polyline points="${preLine}" fill="none" stroke="var(--danger)" stroke-width="2"/>
+    <polyline points="${postLine}" fill="none" stroke="var(--lavender)" stroke-width="2"/>
+    ${dots(sessions.map(s=>s.preStress), 'var(--danger)')}
+    ${dots(sessions.map(s=>s.postStress), 'var(--lavender)')}
+  </svg>`;
+}
+
+/* ---------- main render ---------- */
+function render(){
+  renderLangBar();
+  const app = document.getElementById("app");
+  if(state.view==="onboarding"){ app.innerHTML = renderOnboarding(); renderQuestions(); }
+  else if(state.view==="home"){ app.innerHTML = renderHome(); }
+  else if(state.view==="practice"){ app.innerHTML = renderPractice(); }
+  else if(state.view==="history"){ app.innerHTML = renderHistory(); }
+}
+render();
+</script>
+</body>
+</html>
