@@ -171,16 +171,23 @@ const CYCLE_OPTIONS = [4,6,10];
 const LOCALES = {uk:"uk-UA", en:"en-GB"};
 
 /* ---------- audio: files live alongside this index.html ---------- */
-// Plays a recorded file and calls onDone once it actually finishes playing
-// (or after a safety-net timeout, in case the file fails to load).
+// iOS/Safari only allows audio playback that's directly tied to a user
+// gesture. Creating a *new* Audio() object for every phase/number gets
+// silently blocked after the very first one. The fix: reuse a single
+// <audio> element for the whole session — once it's played inside a
+// user tap, later .play() calls on that same element are allowed.
+const voiceEl = new Audio();
+voiceEl.preload = "auto";
+
 function playAudioTimed(url, onDone, fallbackMs){
   let done = false;
   const finish = () => { if (done) return; done = true; onDone && onDone(); };
   try{
-    const a = new Audio(encodeURI(url));
-    a.addEventListener("ended", finish);
-    a.addEventListener("error", finish);
-    a.play().catch(finish);
+    voiceEl.onended = finish;
+    voiceEl.onerror = finish;
+    voiceEl.src = encodeURI(url);
+    voiceEl.currentTime = 0;
+    voiceEl.play().catch(finish);
     setTimeout(finish, fallbackMs || 1800);
   } catch(e){ finish(); }
 }
