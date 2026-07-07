@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Дихальні практики</title>
@@ -77,7 +80,7 @@
   .icon-btn{background:none; border:none; color:var(--muted); padding:0; cursor:pointer;}
   .brand-btn{
     display:block; width:100%; background:none; border:none; cursor:pointer;
-    text-align:center; padding:14px 24px 0;
+    text-align:center; padding:14px 24px 0; position:relative; z-index:5;
   }
   .brand{
     font-size:13px; letter-spacing:.08em;
@@ -203,20 +206,35 @@ function playSoftTick(){
     if(!tickAudioCtx) tickAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
     if(tickAudioCtx.state === "suspended") tickAudioCtx.resume();
     const now = tickAudioCtx.currentTime;
-    const osc = tickAudioCtx.createOscillator();
-    const gain = tickAudioCtx.createGain();
+    const master = tickAudioCtx.createGain();
     const filter = tickAudioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(2200, now);
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.exponentialRampToValueAtTime(660, now + 0.14);
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.09, now + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.22);
-    osc.connect(filter).connect(gain).connect(tickAudioCtx.destination);
-    osc.start(now);
-    osc.stop(now + 0.24);
+    filter.frequency.setValueAtTime(1400, now);
+    filter.Q.value = 0.5;
+    master.connect(filter).connect(tickAudioCtx.destination);
+    // Warm, soft bowl-like tone: a few gently detuned low partials,
+    // slow attack, short natural decay — fits inside one second without
+    // feeling sharp or alarm-like.
+    const partials = [
+      { ratio: 1.0, gain: 1.0, detune: 0 },
+      { ratio: 2.0, gain: 0.35, detune: -3 },
+      { ratio: 2.76, gain: 0.15, detune: 2 },
+    ];
+    const base = 261.6; // C4 — warm, low, unobtrusive
+    partials.forEach(p=>{
+      const osc = tickAudioCtx.createOscillator();
+      const g = tickAudioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(base*p.ratio, now);
+      osc.detune.setValueAtTime(p.detune, now);
+      const peak = 0.05 * p.gain;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(peak, now+0.08);
+      g.gain.exponentialRampToValueAtTime(0.0008, now+0.65);
+      osc.connect(g).connect(master);
+      osc.start(now);
+      osc.stop(now+0.7);
+    });
   } catch(e){}
 }
 // iOS/Safari only allows audio playback that's directly tied to a user
