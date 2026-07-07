@@ -75,12 +75,16 @@
   .toprow{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
   .toprow-icons{display:flex; align-items:center; gap:12px;}
   .icon-btn{background:none; border:none; color:var(--muted); padding:0; cursor:pointer;}
+  .brand-btn{
+    display:block; width:100%; background:none; border:none; cursor:pointer;
+    text-align:center; padding:14px 24px 0;
+  }
   .brand{
-    text-align:center; padding:14px 24px 0; font-size:13px; letter-spacing:.08em;
+    font-size:13px; letter-spacing:.08em;
     color:var(--gold); text-transform:uppercase; font-weight:600; opacity:.9;
   }
   .brand-by{
-    text-align:center; font-size:11px; letter-spacing:.04em; color:var(--muted);
+    font-size:11px; letter-spacing:.04em; color:var(--muted);
     text-transform:none; font-weight:400; margin-top:2px;
   }
 </style>
@@ -89,8 +93,10 @@
 
 <div class="starfield" id="starfield"></div>
 
-<div class="brand">Psychology_active</div>
-<div class="brand-by">by Daneliia Korovushkina</div>
+<button class="brand-btn" onclick="returnHome()">
+  <div class="brand">Psychology_active</div>
+  <div class="brand-by">by Daneliia Korovushkina</div>
+</button>
 <div class="topbar" id="langBar"></div>
 <div class="content wrap" id="app"></div>
 
@@ -108,6 +114,7 @@ const STRINGS = {
     appTitle:"Дихальні практики",
     yourBaseline:"Ваш фон на", retake:"Пройти опитування знову",
     chooseTechnique:"Оберіть техніку", cycles:"Кількість циклів",
+    techniquesIntro:"Кілька хвилин усвідомленого дихання допомагають заспокоїтися, зняти напруження і повернути ясність думок — особливо у стресові моменти дня.",
     voiceOn:"Голос", voiceOff:"Без голосу",
     startPractice:"Почати практику", history:"Історія", back:"← Назад",
     beforePractice:"Перед практикою", afterPractice:"Після практики",
@@ -143,6 +150,7 @@ const STRINGS = {
     appTitle:"Breathing practices",
     yourBaseline:"Your baseline on", retake:"Retake the questionnaire",
     chooseTechnique:"Choose a technique", cycles:"Number of cycles",
+    techniquesIntro:"A few minutes of mindful breathing can calm the mind, ease tension, and bring clarity — especially in stressful moments of the day.",
     voiceOn:"Voice", voiceOff:"No voice",
     startPractice:"Start practice", history:"History", back:"← Back",
     beforePractice:"Before practice", afterPractice:"After practice",
@@ -181,6 +189,15 @@ const LOCALES = {uk:"uk-UA", en:"en-GB"};
 
 /* ---------- gentle per-second tick (synthesized, always exactly on time) ---------- */
 let tickAudioCtx = null;
+// Must be called directly from a user-gesture handler (e.g. the "Почати"
+// button) to unlock audio on iOS/Safari — creating the AudioContext later,
+// inside a setTimeout callback, gets silently blocked there too.
+function unlockTickAudio(){
+  try{
+    if(!tickAudioCtx) tickAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(tickAudioCtx.state === "suspended") tickAudioCtx.resume();
+  } catch(e){}
+}
 function playSoftTick(){
   try{
     if(!tickAudioCtx) tickAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -366,6 +383,7 @@ function renderHome(){
     </div>
     ${baselineBlock}
     <h1 class="serif" style="margin-top:20px;">${T.chooseTechnique}</h1>
+    <p class="small muted" style="margin:6px 0 18px;">${T.techniquesIntro}</p>
     <div style="margin:16px 0 20px;">${techCards}</div>
     <p class="xsmall muted" style="text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">${T.cycles}</p>
     <div class="cyc-grid">${cycleBtns}</div>
@@ -453,10 +471,17 @@ function renderPractice(){
   </div>`;
 }
 function setStress(n,isPre){ if(isPre) preStress=n; else postStress=n; render(); }
-function cancelPractice(){ state.view="home"; render(); }
+function cancelPractice(){ returnHome(); }
+function returnHome(){
+  clearTimeout(timerId);
+  paused=false;
+  state.view="home";
+  render();
+}
 function toggleVoiceRun(){ state.voiceOn=!state.voiceOn; render(); }
 
 function beginPractice(){
+  unlockTickAudio();
   const def = TECHNIQUE_DEFS[state.techniqueId];
   phaseIdx=0; secondsLeft=def.phases[0].seconds; cyclesDone=0; paused=false;
   startedAt=Date.now();
