@@ -99,7 +99,7 @@ const STRINGS = {
     appTitle:"Дихальні практики",
     yourBaseline:"Ваш фон на", retake:"Пройти опитування знову",
     chooseTechnique:"Оберіть техніку", cycles:"Кількість циклів",
-    soundOn:"Дзвін", soundOff:"Без дзвону", voiceOn:"Голос", voiceOff:"Без голосу",
+    voiceOn:"Голос", voiceOff:"Без голосу",
     startPractice:"Почати практику", history:"Історія", back:"← Назад",
     beforePractice:"Перед практикою", afterPractice:"Після практики",
     stressQuestion:"Наскільки сильне напруження зараз?", calm:"спокійно", veryTense:"дуже напружено",
@@ -134,7 +134,7 @@ const STRINGS = {
     appTitle:"Breathing practices",
     yourBaseline:"Your baseline on", retake:"Retake the questionnaire",
     chooseTechnique:"Choose a technique", cycles:"Number of cycles",
-    soundOn:"Chime", soundOff:"No chime", voiceOn:"Voice", voiceOff:"No voice",
+    voiceOn:"Voice", voiceOff:"No voice",
     startPractice:"Start practice", history:"History", back:"← Back",
     beforePractice:"Before practice", afterPractice:"After practice",
     stressQuestion:"How tense do you feel right now?", calm:"calm", veryTense:"very tense",
@@ -171,39 +171,24 @@ const CYCLE_OPTIONS = [4,6,10];
 const LOCALES = {uk:"uk-UA", en:"en-GB"};
 
 /* ---------- audio: files live alongside this index.html ---------- */
-function playPhaseAudio(key, lang){
-  let file;
-  if (key === "hold" && lang === "en") file = "hold your breath_en.m4a";
-  else file = `${key}_${lang}.m4a`;
-  const a = new Audio(encodeURI(file));
-  a.play().catch(()=>{});
-}
-function playNumberAudio(n, lang){
-  const a = new Audio(`${n}_${lang}.m4a`);
-  a.play().catch(()=>{});
-}
-let audioCtx = null;
-function chime(phaseKey){
+// Plays a recorded file and calls onDone once it actually finishes playing
+// (or after a safety-net timeout, in case the file fails to load).
+function playAudioTimed(url, onDone, fallbackMs){
+  let done = false;
+  const finish = () => { if (done) return; done = true; onDone && onDone(); };
   try{
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state === "suspended") audioCtx.resume();
-    const now = audioCtx.currentTime;
-    const freq = phaseKey==="in" ? 261.6 : phaseKey==="out" ? 196.0 : 233.1;
-    const dur = phaseKey==="in" ? 2.6 : phaseKey==="out" ? 3.0 : 2.2;
-    const peak = phaseKey==="hold" ? 0.25 : 0.35;
-    const master = audioCtx.createGain();
-    const filter = audioCtx.createBiquadFilter();
-    filter.type="lowpass"; filter.frequency.setValueAtTime(freq*6, now); filter.Q.value=0.6;
-    master.connect(filter).connect(audioCtx.destination);
-    [[1,1,0],[1.003,.6,3],[2,.28,-2],[2.98,.14,4]].forEach(([ratio,gain,detune])=>{
-      const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
-      osc.type="sine"; osc.frequency.setValueAtTime(freq*ratio, now); osc.detune.setValueAtTime(detune, now);
-      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(peak*gain, now+0.2);
-      g.gain.exponentialRampToValueAtTime(0.0005, now+dur);
-      osc.connect(g).connect(master); osc.start(now); osc.stop(now+dur+0.1);
-    });
-  }catch(e){}
+    const a = new Audio(encodeURI(url));
+    a.addEventListener("ended", finish);
+    a.addEventListener("error", finish);
+    a.play().catch(finish);
+    setTimeout(finish, fallbackMs || 1800);
+  } catch(e){ finish(); }
 }
+function phaseAudioUrl(key, lang){
+  if (key === "hold" && lang === "en") return "hold your breath_en.m4a";
+  return `${key}_${lang}.m4a`;
+}
+function numberAudioUrl(n, lang){ return `${n}_${lang}.m4a`; }
 
 /* ---------- state ---------- */
 const state = {
@@ -211,7 +196,6 @@ const state = {
   profile: JSON.parse(localStorage.getItem("breath-profile") || "null"),
   sessions: JSON.parse(localStorage.getItem("breath-sessions") || "[]"),
   view: "onboarding",
-  sound: true,
   voiceOn: true,
   techniqueId: "coherent",
   totalCycles: 6,
@@ -347,8 +331,7 @@ function renderHome(){
     <div style="margin:16px 0 20px;">${techCards}</div>
     <p class="xsmall muted" style="text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">${T.cycles}</p>
     <div class="cyc-grid">${cycleBtns}</div>
-    <div class="row" style="margin-bottom:20px;">
-      <button class="btn-outline ${state.sound?'active-text':''}" onclick="toggleSound()">${state.sound?'🔔':'🔕'} ${state.sound?T.soundOn:T.soundOff}</button>
+    <div style="margin-bottom:20px;">
       <button class="btn-outline ${state.voiceOn?'active-text':''}" onclick="toggleVoice()">${state.voiceOn?'🎙️':'🚫'} ${state.voiceOn?T.voiceOn:T.voiceOff}</button>
     </div>
     <button class="btn-gold" style="margin-bottom:10px;" onclick="startPractice()">${T.startPractice} →</button>
@@ -359,7 +342,6 @@ function renderHome(){
 }
 function selectTechnique(id){ state.techniqueId=id; render(); }
 function selectCycles(n){ state.totalCycles=n; render(); }
-function toggleSound(){ state.sound=!state.sound; render(); }
 function toggleVoice(){ state.voiceOn=!state.voiceOn; render(); }
 function retakeOnboarding(){ state.view="onboarding"; render(); }
 function goHistory(){ state.view="history"; render(); }
@@ -415,7 +397,6 @@ function renderPractice(){
       <span class="xsmall muted">${T.techniques[state.techniqueId].name}</span>
       <div class="toprow-icons">
         <button class="icon-btn" onclick="toggleVoiceRun()">${state.voiceOn?'🎙️':'🚫'}</button>
-        <button class="icon-btn" onclick="toggleSoundRun()">${state.sound?'🔔':'🔕'}</button>
         <span class="xsmall muted">${T.cycle} ${Math.min(cyclesDone+1,state.totalCycles)} / ${state.totalCycles}</span>
       </div>
     </div>
@@ -435,44 +416,62 @@ function renderPractice(){
 }
 function setStress(n,isPre){ if(isPre) preStress=n; else postStress=n; render(); }
 function cancelPractice(){ state.view="home"; render(); }
-function toggleSoundRun(){ state.sound=!state.sound; render(); }
 function toggleVoiceRun(){ state.voiceOn=!state.voiceOn; render(); }
 
 function beginPractice(){
   const def = TECHNIQUE_DEFS[state.techniqueId];
   phaseIdx=0; secondsLeft=def.phases[0].seconds; cyclesDone=0; paused=false;
   startedAt=Date.now();
-  if(state.sound) chime(def.phases[0].key);
-  if(state.voiceOn) playPhaseAudio(def.phases[0].key, state.lang);
   practiceStage="running";
   render();
-  clearInterval(timerId);
-  timerId=setInterval(tick,1000);
+  clearTimeout(timerId);
+  runStep(def.phases[0].key, /*isPhaseStart*/ true);
 }
-function tick(){
-  if(paused) return;
+
+// Drives one "beat" of the practice: either announces a phase name, or
+// counts down one number — then waits for that recording to actually
+// finish (or a safety timeout) before moving on. This keeps the whole
+// rhythm paced to how long Dana's own voice takes to say each word,
+// instead of a rigid one-second clock.
+function runStep(announceKey, isPhaseStart, numberToSay){
+  if(paused){ pendingStep = () => runStep(announceKey, isPhaseStart, numberToSay); return; }
+  const proceed = () => { if(!paused) advanceStep(); else pendingStep = advanceStep; };
+  if(state.voiceOn){
+    const url = isPhaseStart ? phaseAudioUrl(announceKey, state.lang) : numberAudioUrl(numberToSay, state.lang);
+    playAudioTimed(url, proceed, 1800);
+  } else {
+    timerId = setTimeout(proceed, 1000);
+  }
+}
+
+let pendingStep = null;
+
+function advanceStep(){
   const def = TECHNIQUE_DEFS[state.techniqueId];
   if(secondsLeft>1){
     secondsLeft-=1;
-    if(state.voiceOn) playNumberAudio(secondsLeft, state.lang);
+    render();
+    runStep(null, false, secondsLeft);
   } else {
     phaseIdx=(phaseIdx+1)%def.phases.length;
     const nextPhase=def.phases[phaseIdx];
-    if(state.sound) chime(nextPhase.key);
-    if(state.voiceOn) playPhaseAudio(nextPhase.key, state.lang);
     if(phaseIdx===0){
       cyclesDone+=1;
       if(cyclesDone>=state.totalCycles){
-        clearInterval(timerId);
         practiceStage="post"; render(); return;
       }
     }
     secondsLeft=nextPhase.seconds;
+    render();
+    runStep(nextPhase.key, true);
   }
+}
+function togglePause(){
+  paused=!paused;
+  if(!paused && pendingStep){ const fn=pendingStep; pendingStep=null; fn(); }
   render();
 }
-function togglePause(){ paused=!paused; render(); }
-function endEarly(){ clearInterval(timerId); practiceStage="post"; render(); }
+function endEarly(){ clearTimeout(timerId); pendingStep=null; practiceStage="post"; render(); }
 function finishPractice(){
   const durationMin = Math.max(1, Math.round((Date.now()-startedAt)/60000));
   saveSession({date:new Date().toISOString(), techniqueId:state.techniqueId, durationMin, preStress, postStress});
