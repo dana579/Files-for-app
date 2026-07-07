@@ -179,7 +179,29 @@ const TECHNIQUE_DEFS = {
 const CYCLE_OPTIONS = [4,6,10];
 const LOCALES = {uk:"uk-UA", en:"en-GB"};
 
-/* ---------- audio: files live alongside this index.html ---------- */
+/* ---------- gentle per-second tick (synthesized, always exactly on time) ---------- */
+let tickAudioCtx = null;
+function playSoftTick(){
+  try{
+    if(!tickAudioCtx) tickAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(tickAudioCtx.state === "suspended") tickAudioCtx.resume();
+    const now = tickAudioCtx.currentTime;
+    const osc = tickAudioCtx.createOscillator();
+    const gain = tickAudioCtx.createGain();
+    const filter = tickAudioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(2200, now);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(660, now + 0.14);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.09, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.22);
+    osc.connect(filter).connect(gain).connect(tickAudioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.24);
+  } catch(e){}
+}
 // iOS/Safari only allows audio playback that's directly tied to a user
 // gesture. Creating a *new* Audio() object for every phase/number gets
 // silently blocked after the very first one. The fix: reuse a single
@@ -441,33 +463,26 @@ function beginPractice(){
   practiceStage="running";
   render();
   clearTimeout(timerId);
-  runStep(def.phases[0].key, /*isPhaseStart*/ true);
+  if(state.voiceOn) announcePhase(def.phases[0].key);
+  timerId = setTimeout(tick, 1000);
 }
 
-// Drives one "beat" of the practice: either announces a phase name, or
-// counts down one number — then waits for that recording to actually
-// finish (or a safety timeout) before moving on. This keeps the whole
-// rhythm paced to how long Dana's own voice takes to say each word,
-// instead of a rigid one-second clock.
-function runStep(announceKey, isPhaseStart, numberToSay){
-  if(paused){ pendingStep = () => runStep(announceKey, isPhaseStart, numberToSay); return; }
-  const proceed = () => { if(!paused) advanceStep(); else pendingStep = advanceStep; };
-  if(state.voiceOn){
-    const url = isPhaseStart ? phaseAudioUrl(announceKey, state.lang) : numberAudioUrl(numberToSay, state.lang);
-    playAudioTimed(url, proceed, 1800);
-  } else {
-    timerId = setTimeout(proceed, 1000);
-  }
+// Fire-and-forget: plays Dana's recorded phase name without blocking or
+// altering the timing of the countdown below. Whether her recording takes
+// 0.8s or 2s doesn't change the pace of the practice.
+function announcePhase(key){
+  playAudioTimed(phaseAudioUrl(key, state.lang), ()=>{}, 1800);
 }
 
-let pendingStep = null;
-
-function advanceStep(){
+// The metronome: fires exactly once per second, always — this is what
+// keeps the breathing pattern technically accurate to the chosen
+// technique (e.g. real 4-second inhales), independent of any audio file.
+function tick(){
+  if(paused) return;
   const def = TECHNIQUE_DEFS[state.techniqueId];
+  if(state.voiceOn) playSoftTick();
   if(secondsLeft>1){
     secondsLeft-=1;
-    render();
-    runStep(null, false, secondsLeft);
   } else {
     phaseIdx=(phaseIdx+1)%def.phases.length;
     const nextPhase=def.phases[phaseIdx];
@@ -478,16 +493,17 @@ function advanceStep(){
       }
     }
     secondsLeft=nextPhase.seconds;
-    render();
-    runStep(nextPhase.key, true);
+    if(state.voiceOn) announcePhase(nextPhase.key);
   }
+  render();
+  timerId = setTimeout(tick, 1000);
 }
 function togglePause(){
   paused=!paused;
-  if(!paused && pendingStep){ const fn=pendingStep; pendingStep=null; fn(); }
+  if(!paused){ clearTimeout(timerId); timerId=setTimeout(tick, 1000); }
   render();
 }
-function endEarly(){ clearTimeout(timerId); pendingStep=null; practiceStage="post"; render(); }
+function endEarly(){ clearTimeout(timerId); practiceStage="post"; render(); }
 function finishPractice(){
   const durationMin = Math.max(1, Math.round((Date.now()-startedAt)/60000));
   saveSession({date:new Date().toISOString(), techniqueId:state.techniqueId, durationMin, preStress, postStress});
