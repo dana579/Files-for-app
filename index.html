@@ -201,7 +201,7 @@ function unlockTickAudio(){
     if(tickAudioCtx.state === "suspended") tickAudioCtx.resume();
   } catch(e){}
 }
-function playSoftTick(){
+function playSoftTick(phaseKey){
   try{
     if(!tickAudioCtx) tickAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
     if(tickAudioCtx.state === "suspended") tickAudioCtx.resume();
@@ -214,18 +214,26 @@ function playSoftTick(){
     master.connect(filter).connect(tickAudioCtx.destination);
     // Warm, soft bowl-like tone: a few gently detuned low partials,
     // slow attack, short natural decay — fits inside one second without
-    // feeling sharp or alarm-like.
+    // feeling sharp or alarm-like. Pitch differs by phase so the ear can
+    // tell inhale from exhale without looking at the screen:
+    //   inhale  — a touch higher, gently rising in pitch
+    //   exhale  — lower, gently settling
+    //   hold    — steady, right in between
     const partials = [
       { ratio: 1.0, gain: 1.0, detune: 0 },
       { ratio: 2.0, gain: 0.35, detune: -3 },
       { ratio: 2.76, gain: 0.15, detune: 2 },
     ];
-    const base = 261.6; // C4 — warm, low, unobtrusive
+    let base = 261.6, drift = 1.0; // hold — C4, no pitch drift
+    if(phaseKey === "in"){ base = 293.7; drift = 1.03; }   // D4, drifts slightly up
+    else if(phaseKey === "out"){ base = 220.0; drift = 0.97; } // A3, drifts slightly down
     partials.forEach(p=>{
       const osc = tickAudioCtx.createOscillator();
       const g = tickAudioCtx.createGain();
       osc.type = "sine";
-      osc.frequency.setValueAtTime(base*p.ratio, now);
+      const f0 = base*p.ratio;
+      osc.frequency.setValueAtTime(f0, now);
+      if(drift !== 1.0) osc.frequency.exponentialRampToValueAtTime(f0*drift, now+0.55);
       osc.detune.setValueAtTime(p.detune, now);
       const peak = 0.05 * p.gain;
       g.gain.setValueAtTime(0, now);
@@ -523,7 +531,8 @@ function announcePhase(key){
 function tick(){
   if(paused) return;
   const def = TECHNIQUE_DEFS[state.techniqueId];
-  if(state.voiceOn) playSoftTick();
+  const currentPhaseKey = def.phases[phaseIdx].key;
+  if(state.voiceOn) playSoftTick(currentPhaseKey);
   if(secondsLeft>1){
     secondsLeft-=1;
   } else {
