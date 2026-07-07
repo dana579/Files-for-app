@@ -75,13 +75,22 @@
   .toprow{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
   .toprow-icons{display:flex; align-items:center; gap:12px;}
   .icon-btn{background:none; border:none; color:var(--muted); padding:0; cursor:pointer;}
-  .backlink{display:block; margin:24px 0 8px; color:var(--muted); font-size:14px; background:none; border:none;}
+  .brand{
+    text-align:center; padding:14px 24px 0; font-size:13px; letter-spacing:.08em;
+    color:var(--gold); text-transform:uppercase; font-weight:600; opacity:.9;
+  }
+  .brand-by{
+    text-align:center; font-size:11px; letter-spacing:.04em; color:var(--muted);
+    text-transform:none; font-weight:400; margin-top:2px;
+  }
 </style>
 </head>
 <body>
 
 <div class="starfield" id="starfield"></div>
 
+<div class="brand">Psychology_active</div>
+<div class="brand-by">by Daneliia Korovushkina</div>
 <div class="topbar" id="langBar"></div>
 <div class="content wrap" id="app"></div>
 
